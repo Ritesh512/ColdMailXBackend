@@ -76,7 +76,7 @@ export const getGlobalHrs = async (req, res) => {
 
 export const getUserHrs = async (req, res) => {
   try {
-    const hrs = await Hr.find({ addedBy: req.user._id, isGlobal: false });
+    const hrs = await Hr.find({ addedBy: req.user._id });
     res.status(200).json(hrs);
   } catch (err) {
     console.error('Get user HRs error:', err);
@@ -123,7 +123,7 @@ export const updateHr = async (req, res) => {
       return res.status(404).json({ error: 'HR not found' });
     }
 
-    if (hr.addedBy.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+    if (hr.addedBy.toString() !== req.user._id.toString() || req.user.role !== 'admin') {
       return res.status(403).json({ error: 'Unauthorized to update this HR' });
     }
 
