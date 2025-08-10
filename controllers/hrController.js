@@ -118,8 +118,6 @@ export const addHr = async (req, res) => {
 export const updateHr = async (req, res) => {
   try {
     const hr = await Hr.findById(req.params.id);
-    console.log('Updating HR:', hr);
-    console.log('Request user:', req.user._id, req.user.role);
 
     if (!hr) {
       return res.status(404).json({ error: 'HR not found' });
