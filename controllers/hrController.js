@@ -2,6 +2,9 @@
 import { Hr } from '../models/Hr.js';
 import { parseExcelOrCsv } from '../utils/parseFile.js';
 import fs from 'fs';
+import axios from 'axios';
+import { checkEmailVerificationLimit } from '../utils/rateLimit.js';
+
 
 export const uploadHrBulk = async (req, res) => {
   try {
@@ -86,7 +89,7 @@ export const getUserHrs = async (req, res) => {
 
 export const addHr = async (req, res) => {
   try {
-    const { name, email, company, title, mobileNo, isGlobal = false } = req.body;
+    const { name, email, company, title, mobileNo, isGlobal = false, isVerified = false } = req.body;
 
     if (!name || !email || !company) {
       return res.status(400).json({ error: 'Name, Email, and Company are required.' });
@@ -104,7 +107,7 @@ export const addHr = async (req, res) => {
       title,
       mobileNo,
       isGlobal,
-      isVerified: false,
+      isVerified,
       addedBy: req.user._id,
     });
 
@@ -152,5 +155,51 @@ export const deleteHr = async (req, res) => {
   } catch (err) {
     console.error('Delete HR error:', err);
     res.status(500).json({ error: 'Failed to delete HR' });
+  }
+};
+
+export const verifyEmails = async (req, res) => {
+  try {
+    const { allowed, message } = await checkEmailVerificationLimit(req.user._id);
+  
+    if (!allowed) {
+      return res.status(429).json({ error: message });
+    }
+
+    const { emails } = req.body; // expects: { emails: ["email1@example.com", "email2@example.com"] }
+    if (!Array.isArray(emails) || emails.length === 0) {
+      return res.status(400).json({ error: 'Please provide an array of emails.' });
+    }
+
+    const results = await Promise.all(
+      emails.map(async (email) => {
+        try {
+          const response = await axios.get(
+            `https://api.hunter.io/v2/email-verifier`,
+            {
+              params: {
+                email,
+                api_key: process.env.HUNTER_API_KEY,
+              },
+            }
+          );
+          return {
+            email,
+            status: response.data.data.status,
+          };
+        } catch (err) {
+          return {
+            email,
+            status: 'error',
+            error: err.response?.data?.errors || err.message,
+          };
+        }
+      })
+    );
+
+    res.status(200).json({ results });
+  } catch (err) {
+    console.error('Email verification error:', err);
+    res.status(500).json({ error: 'Failed to verify emails' });
   }
 };

@@ -10,6 +10,8 @@ const userSchema = new mongoose.Schema({
     email: String,
     password: String, // Consider encrypting this later
   },
+  emailVerificationCount: { type: Number, default: 0 },
+  emailVerificationLastReset: { type: Date, default: new Date() }
 }, { timestamps: true });
 
 userSchema.pre('save', async function (next) {
