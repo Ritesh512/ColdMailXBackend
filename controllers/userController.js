@@ -33,3 +33,24 @@ export const loginUser = async (req, res) => {
     token: generateToken(user._id),
   });
 };
+
+
+export const updateSmtp = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ error: 'SMTP email and password are required.' });
+    }
+
+    const user = await User.findByIdAndUpdate(
+      req.user._id,
+      { smtp: { email, password } },
+      { new: true }
+    ).select('-password'); // Don't return password
+
+    res.status(200).json({ smtp: user.smtp });
+  } catch (err) {
+    console.error('Update SMTP error:', err);
+    res.status(500).json({ error: 'Failed to update SMTP settings.' });
+  }
+};
