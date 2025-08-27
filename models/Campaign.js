@@ -2,6 +2,7 @@
 import mongoose from 'mongoose';
 
 const campaignSchema = new mongoose.Schema({
+  campaignName: { type: String, required: true },
   user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   company: String,
   hrList: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Hr' }],

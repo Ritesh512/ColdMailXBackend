@@ -35,9 +35,11 @@ export const sendCampaign = async (req, res) => {
     // Configure nodemailer with user's SMTP credentials
     const transporter = nodemailer.createTransport({
       service: 'gmail', // or as per user config
+      port: 465,
+      secure: true,
       auth: {
-        user: req.user.smtp.email,
-        pass: req.user.smtp.password,
+        user: req.user.smtp.email || process.env.MAIL_USERNAME,
+        pass: req.user.smtp.password || process.env.MAIL_PASSWORD,
       },
     });
     await transporter.verify();

@@ -7,6 +7,7 @@ import hrRoutes from './routes/hrRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import templateRoutes from './routes/templateRoutes.js';
 import campaignRoutes from './routes/campaignRoutes.js';
+import companyRoutes from './routes/companyRoutes.js';
 
 dotenv.config();
 
@@ -22,6 +23,7 @@ app.use('/api/hr', hrRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/templates', templateRoutes);
 app.use('/api/campaigns', campaignRoutes);
+app.use('/api/hr', companyRoutes);
 
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

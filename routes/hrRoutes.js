@@ -8,6 +8,8 @@ import {
   addHr,
   updateHr,
   deleteHr,
+  verifyEmails,
+  getHrsByCompany,
 } from '../controllers/hrController.js';
 import { protect } from '../middlewares/authMiddleware.js';
 
@@ -21,5 +23,8 @@ router.get('/user', protect, getUserHrs);
 router.post('/', protect, addHr);
 router.put('/:id', protect, updateHr);
 router.delete('/:id', protect, deleteHr);
+router.post('/verify-emails', protect, verifyEmails);
+router.get('/by-company', protect, getHrsByCompany);
+
 
 export default router;
