@@ -4,7 +4,7 @@ import { parseExcelOrCsv } from '../utils/parseFile.js';
 import fs from 'fs';
 import axios from 'axios';
 import { checkEmailVerificationLimit } from '../utils/rateLimit.js';
-
+import { Company } from '../models/company.js';
 
 export const uploadHrBulk = async (req, res) => {
   try {
@@ -17,6 +17,17 @@ export const uploadHrBulk = async (req, res) => {
     // Filter out invalid rows
     const rawData = data.filter((d) => d.email && d.name && d.company);
 
+    // Add companies if not present
+    await Promise.all(
+      rawData.map(hr =>
+        Company.findOneAndUpdate(
+          { name: hr.company },
+          { name: hr.company },
+          { upsert: true, new: true }
+        )
+      )
+    );
+    
     // Get emails from file
     const emails = rawData.map((hr) => hr.email.toLowerCase());
 
@@ -100,6 +111,13 @@ export const addHr = async (req, res) => {
       return res.status(409).json({ error: 'HR with this email already exists' });
     }
 
+    // Add company if not present
+    await Company.findOneAndUpdate(
+      { name: company },
+      { name: company },
+      { upsert: true, new: true }
+    );
+
     const hr = await Hr.create({
       name,
       email,
@@ -129,6 +147,16 @@ export const updateHr = async (req, res) => {
     if (hr.addedBy.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
       return res.status(403).json({ error: 'Unauthorized to update this HR' });
     }
+
+     // If company is being updated, add it if not present
+    if (req.body.company) {
+      await Company.findOneAndUpdate(
+        { name: req.body.company },
+        { name: req.body.company },
+        { upsert: true, new: true }
+      );
+    }
+
 
     const updatedHr = await Hr.findByIdAndUpdate(req.params.id, req.body, { new: true });
     res.status(200).json(updatedHr);
@@ -201,5 +229,31 @@ export const verifyEmails = async (req, res) => {
   } catch (err) {
     console.error('Email verification error:', err);
     res.status(500).json({ error: 'Failed to verify emails' });
+  }
+};
+
+
+export const getHrsByCompany = async (req, res) => {
+  try {
+    const { company } = req.query;
+    if (!company) {
+      return res.status(400).json({ error: 'Company name is required in query.' });
+    }
+
+    console.log('Fetching HRs for company:', company);
+    console.log('Request made by user ID:', req.user._id);
+
+    const hrs = await Hr.find({
+      company,
+      $or: [
+        { isGlobal: true },
+        { addedBy: req.user._id }
+      ]
+    }).select('name email _id isVerified isGlobal');
+
+    res.status(200).json(hrs);
+  } catch (err) {
+    console.error('Get HRs by company error:', err);
+    res.status(500).json({ error: 'Failed to fetch HRs' });
   }
 };
