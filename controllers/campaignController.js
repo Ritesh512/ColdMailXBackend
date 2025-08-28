@@ -98,11 +98,12 @@ export const sendCampaign = async (req, res) => {
 
 export const createCampaign = async (req, res) => {
   try {
-    const { company, hrList, template, placeholders } = req.body;
+    const { campaignName, company, hrList, template, placeholders } = req.body;
 
     const campaign = await Campaign.create({
       user: req.user._id,
       company,
+      campaignName,
       hrList,
       template,
       placeholders, // expects [{ key: "resumeLink", value: "..." }, ...]
