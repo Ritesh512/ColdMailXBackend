@@ -118,6 +118,40 @@ export const createCampaign = async (req, res) => {
   }
 };
 
+export const editCampaign = async (req, res) => {
+  try {
+    const { campaignId } = req.params;
+    const updates = req.body;
+
+    const campaign = await Campaign.findById(campaignId);
+    if (!campaign) return res.status(404).json({ error: 'Campaign not found' });
+
+    if (!campaign.user.equals(req.user._id) && req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Unauthorized' });
+    }
+
+    // Only allow updating certain fields
+    const allowedFields = [
+      'campaignName',
+      'company',
+      'hrList',
+      'template',
+      'placeholders'
+    ];
+    allowedFields.forEach(field => {
+      if (updates[field] !== undefined) {
+        campaign[field] = updates[field];
+      }
+    });
+
+    await campaign.save();
+    res.status(200).json(campaign);
+  } catch (err) {
+    console.error('Edit campaign error:', err);
+    res.status(500).json({ error: 'Failed to edit campaign' });
+  }
+};
+
 export const getCampaigns = async (req, res) => {
   try {
     const campaigns = await Campaign.find({ user: req.user._id })

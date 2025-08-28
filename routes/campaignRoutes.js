@@ -5,7 +5,8 @@ import {
   getCampaigns,
   getCampaignById,
   previewTemplate,
-  sendCampaign
+  sendCampaign,
+  editCampaign
 } from '../controllers/campaignController.js';
 
 const router = Router();
@@ -15,6 +16,7 @@ router.get('/', protect, getCampaigns);
 router.get('/:id', protect, getCampaignById);
 router.post('/preview', protect, previewTemplate);
 router.post('/:campaignId/send', protect, sendCampaign);
+router.put('/:campaignId', protect, editCampaign);
 
 
 export default router;
