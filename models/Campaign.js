@@ -7,8 +7,12 @@ const campaignSchema = new mongoose.Schema({
   company: String,
   hrList: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Hr' }],
   template: { type: mongoose.Schema.Types.ObjectId, ref: 'Template' },
-  resumeUrl: String,
-  jobId: String,
+  placeholders: [
+    {
+      key: { type: String, required: true },
+      value: { type: String, required: true }
+    }
+  ],
   status: { type: String, enum: ['Pending', 'Sent', 'Failed'], default: 'Pending' },
   sentTo: [{
     hr: { type: mongoose.Schema.Types.ObjectId, ref: 'Hr' },
