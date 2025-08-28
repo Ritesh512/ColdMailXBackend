@@ -23,6 +23,7 @@ export const previewTemplate = async (req, res) => {
   }
 };
 
+
 export const sendCampaign = async (req, res) => {
   try {
     const { campaignId } = req.params;
@@ -34,7 +35,7 @@ export const sendCampaign = async (req, res) => {
 
     // Configure nodemailer with user's SMTP credentials
     const transporter = nodemailer.createTransport({
-      service: 'gmail', // or as per user config
+      service: 'gmail',
       port: 465,
       secure: true,
       auth: {
@@ -50,13 +51,21 @@ export const sendCampaign = async (req, res) => {
     const sentResults = [];
 
     for (const hr of campaign.hrList) {
+      // Build dynamic data object for template from placeholders
+      const placeholderData = {};
+      campaign.placeholders.forEach(({ key, value }) => {
+        placeholderData[key] = value;
+      });
+
+      // Add HR and user info
       const data = {
-        userName: req.user.name,
-        userEmail: req.user.email,
-        resumeLink: campaign.resumeUrl,
-        jobId: campaign.jobId || '',
+        ...placeholderData,
         hrName: hr.name,
         company: hr.company,
+        userName: req.user.name,
+        userEmail: req.user.email,
+        email: hr.email,
+        id: hr._id,
       };
 
       const mailOptions = {
@@ -89,15 +98,14 @@ export const sendCampaign = async (req, res) => {
 
 export const createCampaign = async (req, res) => {
   try {
-    const { company, hrList, template, resumeUrl, jobId } = req.body;
+    const { company, hrList, template, placeholders } = req.body;
 
     const campaign = await Campaign.create({
       user: req.user._id,
       company,
       hrList,
       template,
-      resumeUrl,
-      jobId,
+      placeholders, // expects [{ key: "resumeLink", value: "..." }, ...]
       status: 'Pending',
       sentTo: [],
     });
