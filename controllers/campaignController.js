@@ -182,3 +182,32 @@ export const getCampaignById = async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch campaign' });
   }
 };
+
+export const getEmailLimit = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const maxLimit = 300;
+
+    // Calculate today's date range
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+
+    // Find campaigns created today and sum sentTo counts
+    const campaignsToday = await Campaign.find({
+      user: userId,
+      createdAt: { $gte: today, $lt: tomorrow }
+    }, 'sentTo');
+    const emailsSentToday = campaignsToday.reduce((sum, camp) => sum + (camp.sentTo?.length || 0), 0);
+
+    res.status(200).json({
+      emailsSentToday,
+      remainingLimit: Math.max(0, maxLimit - emailsSentToday),
+      maxLimit
+    });
+  } catch (err) {
+    console.error('Get email limit error:', err);
+    res.status(500).json({ error: 'Failed to fetch email limit' });
+  }
+};
