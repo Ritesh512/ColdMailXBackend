@@ -3,6 +3,8 @@ import { Hr } from '../models/Hr.js';
 import { Template } from '../models/Template.js';
 import nodemailer from 'nodemailer';
 import handlebars from 'handlebars';
+import { CampaignHistory } from '../models/CampaignHistory.js';
+
 
 export const previewTemplate = async (req, res) => {
   try {
@@ -87,6 +89,15 @@ export const sendCampaign = async (req, res) => {
     campaign.sentTo = sentResults;
     campaign.status = sentResults.every(r => r.status === 'Sent') ? 'Sent' : 'Failed';
     await campaign.save();
+
+    await CampaignHistory.create({
+      campaign: campaign._id,
+      user: req.user._id,
+      hrList: campaign.hrList.map(hr => hr._id),
+      sentTo: sentResults.filter(r => r.status === 'Sent').map(r => r.hr),
+      sentCount: sentResults.filter(r => r.status === 'Sent').length,
+      sentAt: new Date()
+    });
 
     res.status(200).json({ message: 'Campaign processed', sentResults });
   } catch (err) {
