@@ -6,17 +6,20 @@ import {
   getCampaignById,
   previewTemplate,
   sendCampaign,
-  editCampaign
+  editCampaign,
+  getEmailLimit
 } from '../controllers/campaignController.js';
 
 const router = Router();
 
 router.post('/', protect, createCampaign);
 router.get('/', protect, getCampaigns);
+router.get('/email-limit', protect, getEmailLimit);
 router.get('/:id', protect, getCampaignById);
 router.post('/preview', protect, previewTemplate);
 router.post('/:campaignId/send', protect, sendCampaign);
 router.put('/:campaignId', protect, editCampaign);
+
 
 
 export default router;
