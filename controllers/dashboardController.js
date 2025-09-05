@@ -1,6 +1,7 @@
 import { Campaign } from '../models/Campaign.js';
 import { Hr } from '../models/Hr.js';
 import { User } from '../models/User.js';
+import { CampaignHistory } from '../models/CampaignHistory.js';
 
 export const getDashboardStats = async (req, res) => {
   try {
@@ -11,9 +12,9 @@ export const getDashboardStats = async (req, res) => {
     const successfulCampaigns = await Campaign.countDocuments({ user: userId, status: 'Sent' });
     const failedCampaigns = await Campaign.countDocuments({ user: userId, status: 'Failed' });
 
-    // 2. Count of emails sent by the user
-    const userCampaigns = await Campaign.find({ user: userId }, 'sentTo createdAt');
-    const emailsSent = userCampaigns.reduce((sum, camp) => sum + (camp.sentTo?.length || 0), 0);
+    // 2. Count of emails sent by the user (all time)
+    const allHistory = await CampaignHistory.find({ user: userId });
+    const emailsSent = allHistory.reduce((sum, h) => sum + (h.sentCount || 0), 0);
 
     // 2a. Emails sent today
     const today = new Date();
@@ -21,28 +22,28 @@ export const getDashboardStats = async (req, res) => {
     const tomorrow = new Date(today);
     tomorrow.setDate(today.getDate() + 1);
 
-    const campaignsToday = await Campaign.find({
+    const historyToday = await CampaignHistory.find({
       user: userId,
-      createdAt: { $gte: today, $lt: tomorrow }
-    }, 'sentTo');
-    const emailsSentToday = campaignsToday.reduce((sum, camp) => sum + (camp.sentTo?.length || 0), 0);
+      sentAt: { $gte: today, $lt: tomorrow }
+    });
+    const emailsSentToday = historyToday.reduce((sum, h) => sum + (h.sentCount || 0), 0);
 
-    // 2b. Emails sent for last 5 days
+    // 2b. Emails sent for last 5 days (including today)
     const emailsSentLast5Days = [];
-    for (let i = 0; i < 5; i++) {
+    for (let i = 4; i >= 0; i--) {
       const dayStart = new Date();
       dayStart.setHours(0, 0, 0, 0);
       dayStart.setDate(dayStart.getDate() - i);
       const dayEnd = new Date(dayStart);
       dayEnd.setDate(dayEnd.getDate() + 1);
 
-      const campaignsDay = await Campaign.find({
+      const historyDay = await CampaignHistory.find({
         user: userId,
-        createdAt: { $gte: dayStart, $lt: dayEnd }
-      }, 'sentTo');
-      const count = campaignsDay.reduce((sum, camp) => sum + (camp.sentTo?.length || 0), 0);
+        sentAt: { $gte: dayStart, $lt: dayEnd }
+      });
+      const count = historyDay.reduce((sum, h) => sum + (h.sentCount || 0), 0);
 
-      emailsSentLast5Days.unshift({
+      emailsSentLast5Days.push({
         date: dayStart.toISOString().slice(0, 10),
         count
       });
@@ -74,25 +75,25 @@ export const getDashboardStats = async (req, res) => {
 
     // 6. Recent 3 campaigns sent
     const recentCampaigns = await Campaign.find({ user: userId })
-    .sort({ createdAt: -1 })
-    .limit(3)
-    .populate({
+      .sort({ createdAt: -1 })
+      .limit(3)
+      .populate({
         path: 'template',
         select: 'name subject'
-    })
-    .populate({
+      })
+      .populate({
         path: 'hrList',
         select: '_id'
-    })
-    .select('campaignName template company hrList createdAt');
+      })
+      .select('campaignName template company hrList createdAt');
 
     const recentCampaignsFormatted = recentCampaigns.map(camp => ({
-    campaignName: camp.campaignName,
-    templateName: camp.template?.name || '',
-    templateSubject: camp.template?.subject || '',
-    company: camp.company,
-    hrCount: camp.hrList?.length || 0,
-    sendDate: camp.createdAt
+      campaignName: camp.campaignName,
+      templateName: camp.template?.name || '',
+      templateSubject: camp.template?.subject || '',
+      company: camp.company,
+      hrCount: camp.hrList?.length || 0,
+      sendDate: camp.createdAt
     }));
 
     res.status(200).json({
