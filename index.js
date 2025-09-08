@@ -8,6 +8,7 @@ import userRoutes from "./routes/userRoutes.js";
 import templateRoutes from "./routes/templateRoutes.js";
 import campaignRoutes from "./routes/campaignRoutes.js";
 import companyRoutes from "./routes/companyRoutes.js";
+import { connectToDB } from "./utils/db.js";
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -20,10 +21,8 @@ app.use(express.static(path.resolve(__dirname, "dist")));
 app.use(express.json());
 app.use(cors());
 
-mongoose
-  .connect(process.env.MONGO_URI)
-  .then(() => console.log("MongoDB connected"))
-  .catch((err) => console.error(err));
+await connectToDB();
+console.log("MongoDB connected");
 
 app.use("/api/hr", hrRoutes);
 app.use("/api/users", userRoutes);
