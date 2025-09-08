@@ -205,12 +205,12 @@ export const getEmailLimit = async (req, res) => {
     const tomorrow = new Date(today);
     tomorrow.setDate(today.getDate() + 1);
 
-    // Find campaigns created today and sum sentTo counts
-    const campaignsToday = await Campaign.find({
+    // Find campaign history for today and sum sentCount
+    const historyToday = await CampaignHistory.find({
       user: userId,
-      createdAt: { $gte: today, $lt: tomorrow }
-    }, 'sentTo');
-    const emailsSentToday = campaignsToday.reduce((sum, camp) => sum + (camp.sentTo?.length || 0), 0);
+      sentAt: { $gte: today, $lt: tomorrow }
+    });
+    const emailsSentToday = historyToday.reduce((sum, h) => sum + (h.sentCount || 0), 0);
 
     res.status(200).json({
       emailsSentToday,

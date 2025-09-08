@@ -30,12 +30,12 @@ export const getDashboardStats = async (req, res) => {
 
     // 2b. Emails sent for last 5 days (including today)
     const emailsSentLast5Days = [];
-    for (let i = 4; i >= 0; i--) {
+    for (let i = 0; i < 5; i++) {
       const dayStart = new Date();
-      dayStart.setHours(0, 0, 0, 0);
-      dayStart.setDate(dayStart.getDate() - i);
+      dayStart.setUTCHours(0, 0, 0, 0);
+      dayStart.setUTCDate(dayStart.getUTCDate() - (4 - i)); // 4 days ago to today
       const dayEnd = new Date(dayStart);
-      dayEnd.setDate(dayEnd.getDate() + 1);
+      dayEnd.setUTCDate(dayEnd.getUTCDate() + 1);
 
       const historyDay = await CampaignHistory.find({
         user: userId,
