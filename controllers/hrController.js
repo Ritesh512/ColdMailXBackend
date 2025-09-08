@@ -191,15 +191,16 @@ export const verifyEmails = async (req, res) => {
     const { allowed, message } = await checkEmailVerificationLimit(req.user._id);
   
     if (!allowed) {
-      return res.status(429).json({ error: message });
-    }
+      return res.status(429).json({ error: message, status: 429 });
+    } 
 
     const { emails } = req.body; // expects: { emails: ["email1@example.com", "email2@example.com"] }
     if (!Array.isArray(emails) || emails.length === 0) {
-      return res.status(400).json({ error: 'Please provide an array of emails.' });
+      return res.status(400).json({ error: 'Please provide an array of emails.', status: 400 });
     }
 
     const results = await Promise.all(
+      
       emails.map(async (email) => {
         try {
           const response = await axios.get(
@@ -228,7 +229,7 @@ export const verifyEmails = async (req, res) => {
     res.status(200).json({ results });
   } catch (err) {
     console.error('Email verification error:', err);
-    res.status(500).json({ error: 'Failed to verify emails' });
+    res.status(500).json({ error: 'Failed to verify emails', status: 500 } );
   }
 };
 
