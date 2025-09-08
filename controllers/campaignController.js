@@ -1,16 +1,15 @@
-import { Campaign } from '../models/Campaign.js';
-import { Hr } from '../models/Hr.js';
-import { Template } from '../models/Template.js';
-import nodemailer from 'nodemailer';
-import handlebars from 'handlebars';
-import { CampaignHistory } from '../models/CampaignHistory.js';
-
+import { Campaign } from "../models/Campaign.js";
+import { Hr } from "../models/Hr.js";
+import { Template } from "../models/Template.js";
+import nodemailer from "nodemailer";
+import handlebars from "handlebars";
+import { CampaignHistory } from "../models/CampaignHistory.js";
 
 export const previewTemplate = async (req, res) => {
   try {
     const { templateId, previewData } = req.body;
     const template = await Template.findById(templateId);
-    if (!template) return res.status(404).json({ error: 'Template not found' });
+    if (!template) return res.status(404).json({ error: "Template not found" });
 
     const subjectCompiled = handlebars.compile(template.subject);
     const bodyCompiled = handlebars.compile(template.body);
@@ -20,24 +19,25 @@ export const previewTemplate = async (req, res) => {
 
     res.status(200).json({ subject, html });
   } catch (err) {
-    console.error('Preview error:', err);
-    res.status(500).json({ error: 'Failed to preview template' });
+    console.error("Preview error:", err);
+    res.status(500).json({ error: "Failed to preview template" });
   }
 };
-
 
 export const sendCampaign = async (req, res) => {
   try {
     const { campaignId } = req.params;
-    const campaign = await Campaign.findById(campaignId).populate('hrList template');
-    if (!campaign) return res.status(404).json({ error: 'Campaign not found' });
-    if (!campaign.user.equals(req.user._id) && req.user.role !== 'admin') {
-      return res.status(403).json({ error: 'Unauthorized' });
+    const campaign = await Campaign.findById(campaignId).populate(
+      "hrList template"
+    );
+    if (!campaign) return res.status(404).json({ error: "Campaign not found" });
+    if (!campaign.user.equals(req.user._id) && req.user.role !== "admin") {
+      return res.status(403).json({ error: "Unauthorized" });
     }
 
     // Configure nodemailer with user's SMTP credentials
     const transporter = nodemailer.createTransport({
-      service: 'gmail',
+      service: "gmail",
       port: 465,
       secure: true,
       auth: {
@@ -48,7 +48,8 @@ export const sendCampaign = async (req, res) => {
     await transporter.verify();
 
     const subjectTpl = handlebars.compile(campaign.template.subject);
-    const bodyTpl = handlebars.compile(campaign.template.body);
+    // const bodyTpl = handlebars.compile(campaign.template.body);
+    const bodyTpl = handlebars.compile(`<pre>{{{body}}}</pre>`);
 
     const sentResults = [];
 
@@ -74,38 +75,39 @@ export const sendCampaign = async (req, res) => {
         from: req.user.smtp.email,
         to: hr.email,
         subject: subjectTpl(data),
-        html: bodyTpl(data),
+        html: bodyTpl({ ...data, body: campaign.template.body }),
       };
 
       try {
         await transporter.sendMail(mailOptions);
-        sentResults.push({ hr: hr._id, status: 'Sent' });
+        sentResults.push({ hr: hr._id, status: "Sent" });
       } catch (err) {
         console.error(`Email send error to ${hr.email}:`, err);
-        sentResults.push({ hr: hr._id, status: 'Failed', error: err.message });
+        sentResults.push({ hr: hr._id, status: "Failed", error: err.message });
       }
     }
 
     campaign.sentTo = sentResults;
-    campaign.status = sentResults.every(r => r.status === 'Sent') ? 'Sent' : 'Failed';
+    campaign.status = sentResults.every((r) => r.status === "Sent")
+      ? "Sent"
+      : "Failed";
     await campaign.save();
 
     await CampaignHistory.create({
       campaign: campaign._id,
       user: req.user._id,
-      hrList: campaign.hrList.map(hr => hr._id),
-      sentTo: sentResults.filter(r => r.status === 'Sent').map(r => r.hr),
-      sentCount: sentResults.filter(r => r.status === 'Sent').length,
-      sentAt: new Date()
+      hrList: campaign.hrList.map((hr) => hr._id),
+      sentTo: sentResults.filter((r) => r.status === "Sent").map((r) => r.hr),
+      sentCount: sentResults.filter((r) => r.status === "Sent").length,
+      sentAt: new Date(),
     });
 
-    res.status(200).json({ message: 'Campaign processed', sentResults });
+    res.status(200).json({ message: "Campaign processed", sentResults });
   } catch (err) {
-    console.error('Send campaign error:', err);
-    res.status(500).json({ error: 'Failed to send campaign' });
+    console.error("Send campaign error:", err);
+    res.status(500).json({ error: "Failed to send campaign" });
   }
 };
-
 
 export const createCampaign = async (req, res) => {
   try {
@@ -118,14 +120,14 @@ export const createCampaign = async (req, res) => {
       hrList,
       template,
       placeholders, // expects [{ key: "resumeLink", value: "..." }, ...]
-      status: 'Pending',
+      status: "Pending",
       sentTo: [],
     });
 
     res.status(201).json(campaign);
   } catch (err) {
-    console.error('Create campaign error:', err);
-    res.status(500).json({ error: 'Failed to create campaign' });
+    console.error("Create campaign error:", err);
+    res.status(500).json({ error: "Failed to create campaign" });
   }
 };
 
@@ -135,21 +137,21 @@ export const editCampaign = async (req, res) => {
     const updates = req.body;
 
     const campaign = await Campaign.findById(campaignId);
-    if (!campaign) return res.status(404).json({ error: 'Campaign not found' });
+    if (!campaign) return res.status(404).json({ error: "Campaign not found" });
 
-    if (!campaign.user.equals(req.user._id) && req.user.role !== 'admin') {
-      return res.status(403).json({ error: 'Unauthorized' });
+    if (!campaign.user.equals(req.user._id) && req.user.role !== "admin") {
+      return res.status(403).json({ error: "Unauthorized" });
     }
 
     // Only allow updating certain fields
     const allowedFields = [
-      'campaignName',
-      'company',
-      'hrList',
-      'template',
-      'placeholders'
+      "campaignName",
+      "company",
+      "hrList",
+      "template",
+      "placeholders",
     ];
-    allowedFields.forEach(field => {
+    allowedFields.forEach((field) => {
       if (updates[field] !== undefined) {
         campaign[field] = updates[field];
       }
@@ -158,39 +160,39 @@ export const editCampaign = async (req, res) => {
     await campaign.save();
     res.status(200).json(campaign);
   } catch (err) {
-    console.error('Edit campaign error:', err);
-    res.status(500).json({ error: 'Failed to edit campaign' });
+    console.error("Edit campaign error:", err);
+    res.status(500).json({ error: "Failed to edit campaign" });
   }
 };
 
 export const getCampaigns = async (req, res) => {
   try {
     const campaigns = await Campaign.find({ user: req.user._id })
-      .populate('hrList')
-      .populate('template');
+      .populate("hrList")
+      .populate("template");
 
     res.status(200).json(campaigns);
   } catch (err) {
-    console.error('Get campaigns error:', err);
-    res.status(500).json({ error: 'Failed to fetch campaigns' });
+    console.error("Get campaigns error:", err);
+    res.status(500).json({ error: "Failed to fetch campaigns" });
   }
 };
 
 export const getCampaignById = async (req, res) => {
   try {
     const campaign = await Campaign.findById(req.params.id)
-      .populate('hrList')
-      .populate('template');
+      .populate("hrList")
+      .populate("template");
 
-    if (!campaign) return res.status(404).json({ error: 'Campaign not found' });
-    if (!campaign.user.equals(req.user._id) && req.user.role !== 'admin') {
-      return res.status(403).json({ error: 'Unauthorized' });
+    if (!campaign) return res.status(404).json({ error: "Campaign not found" });
+    if (!campaign.user.equals(req.user._id) && req.user.role !== "admin") {
+      return res.status(403).json({ error: "Unauthorized" });
     }
 
     res.status(200).json(campaign);
   } catch (err) {
-    console.error('Get campaign by ID error:', err);
-    res.status(500).json({ error: 'Failed to fetch campaign' });
+    console.error("Get campaign by ID error:", err);
+    res.status(500).json({ error: "Failed to fetch campaign" });
   }
 };
 
@@ -208,17 +210,20 @@ export const getEmailLimit = async (req, res) => {
     // Find campaign history for today and sum sentCount
     const historyToday = await CampaignHistory.find({
       user: userId,
-      sentAt: { $gte: today, $lt: tomorrow }
+      sentAt: { $gte: today, $lt: tomorrow },
     });
-    const emailsSentToday = historyToday.reduce((sum, h) => sum + (h.sentCount || 0), 0);
+    const emailsSentToday = historyToday.reduce(
+      (sum, h) => sum + (h.sentCount || 0),
+      0
+    );
 
     res.status(200).json({
       emailsSentToday,
       remainingLimit: Math.max(0, maxLimit - emailsSentToday),
-      maxLimit
+      maxLimit,
     });
   } catch (err) {
-    console.error('Get email limit error:', err);
-    res.status(500).json({ error: 'Failed to fetch email limit' });
+    console.error("Get email limit error:", err);
+    res.status(500).json({ error: "Failed to fetch email limit" });
   }
 };
