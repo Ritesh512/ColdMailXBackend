@@ -8,10 +8,11 @@ import userRoutes from './routes/userRoutes.js';
 import templateRoutes from './routes/templateRoutes.js';
 import campaignRoutes from './routes/campaignRoutes.js';
 import companyRoutes from './routes/companyRoutes.js';
-
+const path = require("path");
 dotenv.config();
 
 const app = express();
+app.use(express.static(path.resolve(__dirname, "dist")));
 app.use(express.json());
 app.use(cors());
 
@@ -25,5 +26,9 @@ app.use('/api/templates', templateRoutes);
 app.use('/api/campaigns', campaignRoutes);
 app.use('/api/hr', companyRoutes);
 
+
+app.get("*", (req, res) =>
+  res.sendFile(path.resolve(__dirname, "dist", "index.html"))
+);
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
