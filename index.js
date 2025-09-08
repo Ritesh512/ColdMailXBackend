@@ -1,15 +1,15 @@
 // app.js
-import express from 'express';
-import mongoose from 'mongoose';
-import cors from 'cors';
-import dotenv from 'dotenv';
-import hrRoutes from './routes/hrRoutes.js';
-import userRoutes from './routes/userRoutes.js';
-import templateRoutes from './routes/templateRoutes.js';
-import campaignRoutes from './routes/campaignRoutes.js';
-import companyRoutes from './routes/companyRoutes.js';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import express from "express";
+import mongoose from "mongoose";
+import cors from "cors";
+import dotenv from "dotenv";
+import hrRoutes from "./routes/hrRoutes.js";
+import userRoutes from "./routes/userRoutes.js";
+import templateRoutes from "./routes/templateRoutes.js";
+import campaignRoutes from "./routes/campaignRoutes.js";
+import companyRoutes from "./routes/companyRoutes.js";
+import path from "path";
+import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -20,19 +20,22 @@ app.use(express.static(path.resolve(__dirname, "dist")));
 app.use(express.json());
 app.use(cors());
 
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log('MongoDB connected'))
-  .catch(err => console.error(err));
+mongoose
+  .connect(process.env.MONGO_URI)
+  .then(() => console.log("MongoDB connected"))
+  .catch((err) => console.error(err));
 
-app.use('/api/hr', hrRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/templates', templateRoutes);
-app.use('/api/campaigns', campaignRoutes);
-app.use('/api/hr', companyRoutes);
+app.use("/api/hr", hrRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api/templates", templateRoutes);
+app.use("/api/campaigns", campaignRoutes);
+app.use("/api/hr", companyRoutes);
 
 app.get(/.*/, (req, res) => {
   res.sendFile(path.resolve(__dirname, "dist", "index.html"));
 });
 
-const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+// const PORT = process.env.PORT || 8080;
+// app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+export default app;
