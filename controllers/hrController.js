@@ -1,25 +1,27 @@
 // controllers/hrController.js
-import { Hr } from '../models/Hr.js';
-import { parseExcelOrCsv } from '../utils/parseFile.js';
-import fs from 'fs';
-import axios from 'axios';
-import { checkEmailVerificationLimit } from '../utils/rateLimit.js';
-import { Company } from '../models/company.js';
+import { Hr } from "../models/Hr.js";
+import { parseExcelOrCsv } from "../utils/parseFile.js";
+import fs from "fs";
+import axios from "axios";
+import { checkEmailVerificationLimit } from "../utils/rateLimit.js";
+import { Company } from "../models/company.js";
 
 export const uploadHrBulk = async (req, res) => {
   try {
-    const file = req.file;
-    console.log(file);
     const addedBy = req.user._id; // assuming user is authenticated
-    const ext = file.originalname.split('.').pop();
-    const data = await parseExcelOrCsv(file.path, ext);
+
+    const file = req.file;
+    const ext = file.originalname.split(".").pop();
+
+    // parseExcelOrCsv must be updated to handle Buffers instead of file paths
+    const data = await parseExcelOrCsv(file.buffer, ext);
 
     // Filter out invalid rows
     const rawData = data.filter((d) => d.email && d.name && d.company);
 
     // Add companies if not present
     await Promise.all(
-      rawData.map(hr =>
+      rawData.map((hr) =>
         Company.findOneAndUpdate(
           { name: hr.company },
           { name: hr.company },
@@ -27,13 +29,15 @@ export const uploadHrBulk = async (req, res) => {
         )
       )
     );
-    
+
     // Get emails from file
     const emails = rawData.map((hr) => hr.email.toLowerCase());
 
     // Find existing HRs by email
-    const existing = await Hr.find({ email: { $in: emails } }).select('email');
-    const existingEmails = new Set(existing.map((hr) => hr.email.toLowerCase()));
+    const existing = await Hr.find({ email: { $in: emails } }).select("email");
+    const existingEmails = new Set(
+      existing.map((hr) => hr.email.toLowerCase())
+    );
 
     // Filter only new HRs
     const newHrs = rawData
@@ -42,8 +46,8 @@ export const uploadHrBulk = async (req, res) => {
         name: hr.name,
         email: hr.email,
         company: hr.company,
-        title: hr.title || '',
-        mobileNo: hr.mobileNo || '',
+        title: hr.title || "",
+        mobileNo: hr.mobileNo || "",
         addedBy,
         isVerified: false,
         isGlobal: false,
@@ -53,28 +57,29 @@ export const uploadHrBulk = async (req, res) => {
       await Hr.insertMany(newHrs);
     }
 
-    fs.unlinkSync(file.path); // Clean up uploaded file
+    // fs.unlinkSync(file.path); // Clean up uploaded file
 
     res.status(200).json({
-      message: 'Bulk HR upload completed',
+      message: "Bulk HR upload completed",
       added: newHrs.length,
       skipped: rawData.length - newHrs.length,
     });
   } catch (err) {
-    console.error('Error uploading HR bulk:', err);
+    console.error("Error uploading HR bulk:", err);
     res.status(500).json({ error: err.message });
   }
 };
 
-
 export const getAllHrs = async (req, res) => {
   try {
     const userId = req.user._id;
-    const hrs = await Hr.find({ $or: [{ isGlobal: true }, { addedBy: userId }] });
+    const hrs = await Hr.find({
+      $or: [{ isGlobal: true }, { addedBy: userId }],
+    });
     res.status(200).json(hrs);
   } catch (err) {
-    console.error('Get all HRs error:', err);
-    res.status(500).json({ error: 'Failed to fetch HRs' });
+    console.error("Get all HRs error:", err);
+    res.status(500).json({ error: "Failed to fetch HRs" });
   }
 };
 
@@ -83,8 +88,8 @@ export const getGlobalHrs = async (req, res) => {
     const hrs = await Hr.find({ isGlobal: true });
     res.status(200).json(hrs);
   } catch (err) {
-    console.error('Get global HRs error:', err);
-    res.status(500).json({ error: 'Failed to fetch global HRs' });
+    console.error("Get global HRs error:", err);
+    res.status(500).json({ error: "Failed to fetch global HRs" });
   }
 };
 
@@ -93,22 +98,34 @@ export const getUserHrs = async (req, res) => {
     const hrs = await Hr.find({ addedBy: req.user._id });
     res.status(200).json(hrs);
   } catch (err) {
-    console.error('Get user HRs error:', err);
-    res.status(500).json({ error: 'Failed to fetch user HRs' });
+    console.error("Get user HRs error:", err);
+    res.status(500).json({ error: "Failed to fetch user HRs" });
   }
 };
 
 export const addHr = async (req, res) => {
   try {
-    const { name, email, company, title, mobileNo, isGlobal = false, isVerified = false } = req.body;
+    const {
+      name,
+      email,
+      company,
+      title,
+      mobileNo,
+      isGlobal = false,
+      isVerified = false,
+    } = req.body;
 
     if (!name || !email || !company) {
-      return res.status(400).json({ error: 'Name, Email, and Company are required.' });
+      return res
+        .status(400)
+        .json({ error: "Name, Email, and Company are required." });
     }
 
     const exists = await Hr.findOne({ email });
     if (exists) {
-      return res.status(409).json({ error: 'HR with this email already exists' });
+      return res
+        .status(409)
+        .json({ error: "HR with this email already exists" });
     }
 
     // Add company if not present
@@ -131,8 +148,8 @@ export const addHr = async (req, res) => {
 
     res.status(201).json(hr);
   } catch (err) {
-    console.error('Add HR error:', err);
-    res.status(500).json({ error: 'Failed to add HR' });
+    console.error("Add HR error:", err);
+    res.status(500).json({ error: "Failed to add HR" });
   }
 };
 
@@ -141,14 +158,17 @@ export const updateHr = async (req, res) => {
     const hr = await Hr.findById(req.params.id);
 
     if (!hr) {
-      return res.status(404).json({ error: 'HR not found' });
+      return res.status(404).json({ error: "HR not found" });
     }
 
-    if (hr.addedBy.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
-      return res.status(403).json({ error: 'Unauthorized to update this HR' });
+    if (
+      hr.addedBy.toString() !== req.user._id.toString() &&
+      req.user.role !== "admin"
+    ) {
+      return res.status(403).json({ error: "Unauthorized to update this HR" });
     }
 
-     // If company is being updated, add it if not present
+    // If company is being updated, add it if not present
     if (req.body.company) {
       await Company.findOneAndUpdate(
         { name: req.body.company },
@@ -157,12 +177,13 @@ export const updateHr = async (req, res) => {
       );
     }
 
-
-    const updatedHr = await Hr.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const updatedHr = await Hr.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+    });
     res.status(200).json(updatedHr);
   } catch (err) {
-    console.error('Update HR error:', err);
-    res.status(500).json({ error: 'Failed to update HR' });
+    console.error("Update HR error:", err);
+    res.status(500).json({ error: "Failed to update HR" });
   }
 };
 
@@ -171,36 +192,42 @@ export const deleteHr = async (req, res) => {
     const hr = await Hr.findById(req.params.id);
 
     if (!hr) {
-      return res.status(404).json({ error: 'HR not found' });
+      return res.status(404).json({ error: "HR not found" });
     }
 
-    if (hr.addedBy.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
-      return res.status(403).json({ error: 'Unauthorized to delete this HR' });
+    if (
+      hr.addedBy.toString() !== req.user._id.toString() &&
+      req.user.role !== "admin"
+    ) {
+      return res.status(403).json({ error: "Unauthorized to delete this HR" });
     }
 
     await Hr.findByIdAndDelete(req.params.id);
-    res.status(200).json({ message: 'HR deleted successfully' });
+    res.status(200).json({ message: "HR deleted successfully" });
   } catch (err) {
-    console.error('Delete HR error:', err);
-    res.status(500).json({ error: 'Failed to delete HR' });
+    console.error("Delete HR error:", err);
+    res.status(500).json({ error: "Failed to delete HR" });
   }
 };
 
 export const verifyEmails = async (req, res) => {
   try {
-    const { allowed, message } = await checkEmailVerificationLimit(req.user._id);
-  
+    const { allowed, message } = await checkEmailVerificationLimit(
+      req.user._id
+    );
+
     if (!allowed) {
       return res.status(429).json({ error: message, status: 429 });
-    } 
+    }
 
     const { emails } = req.body; // expects: { emails: ["email1@example.com", "email2@example.com"] }
     if (!Array.isArray(emails) || emails.length === 0) {
-      return res.status(400).json({ error: 'Please provide an array of emails.', status: 400 });
+      return res
+        .status(400)
+        .json({ error: "Please provide an array of emails.", status: 400 });
     }
 
     const results = await Promise.all(
-      
       emails.map(async (email) => {
         try {
           const response = await axios.get(
@@ -219,7 +246,7 @@ export const verifyEmails = async (req, res) => {
         } catch (err) {
           return {
             email,
-            status: 'error',
+            status: "error",
             error: err.response?.data?.errors || err.message,
           };
         }
@@ -228,33 +255,31 @@ export const verifyEmails = async (req, res) => {
 
     res.status(200).json({ results });
   } catch (err) {
-    console.error('Email verification error:', err);
-    res.status(500).json({ error: 'Failed to verify emails', status: 500 } );
+    console.error("Email verification error:", err);
+    res.status(500).json({ error: "Failed to verify emails", status: 500 });
   }
 };
-
 
 export const getHrsByCompany = async (req, res) => {
   try {
     const { company } = req.query;
     if (!company) {
-      return res.status(400).json({ error: 'Company name is required in query.' });
+      return res
+        .status(400)
+        .json({ error: "Company name is required in query." });
     }
 
-    console.log('Fetching HRs for company:', company);
-    console.log('Request made by user ID:', req.user._id);
+    console.log("Fetching HRs for company:", company);
+    console.log("Request made by user ID:", req.user._id);
 
     const hrs = await Hr.find({
       company,
-      $or: [
-        { isGlobal: true },
-        { addedBy: req.user._id }
-      ]
-    }).select('name email _id isVerified isGlobal');
+      $or: [{ isGlobal: true }, { addedBy: req.user._id }],
+    }).select("name email _id isVerified isGlobal");
 
     res.status(200).json(hrs);
   } catch (err) {
-    console.error('Get HRs by company error:', err);
-    res.status(500).json({ error: 'Failed to fetch HRs' });
+    console.error("Get HRs by company error:", err);
+    res.status(500).json({ error: "Failed to fetch HRs" });
   }
 };

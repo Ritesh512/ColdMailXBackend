@@ -1,5 +1,5 @@
-import { Router } from 'express';
-import multer from 'multer';
+import { Router } from "express";
+import multer from "multer";
 import {
   uploadHrBulk,
   getAllHrs,
@@ -10,21 +10,21 @@ import {
   deleteHr,
   verifyEmails,
   getHrsByCompany,
-} from '../controllers/hrController.js';
-import { protect } from '../middlewares/authMiddleware.js';
+} from "../controllers/hrController.js";
+import { protect } from "../middlewares/authMiddleware.js";
 
 const router = Router();
-const upload = multer({ dest: 'uploads/' });
+const storage = multer.memoryStorage(); // in-memory, safe on Vercel
+const upload = multer({ storage });
 
-router.post('/upload-bulk', protect, upload.single('file'), uploadHrBulk);
-router.get('/', protect, getAllHrs);
-router.get('/global', protect, getGlobalHrs);
-router.get('/user', protect, getUserHrs);
-router.post('/', protect, addHr);
-router.put('/:id', protect, updateHr);
-router.delete('/:id', protect, deleteHr);
-router.post('/verify-emails', protect, verifyEmails);
-router.get('/by-company', protect, getHrsByCompany);
-
+router.post("/upload-bulk", protect, upload.single("file"), uploadHrBulk);
+router.get("/", protect, getAllHrs);
+router.get("/global", protect, getGlobalHrs);
+router.get("/user", protect, getUserHrs);
+router.post("/", protect, addHr);
+router.put("/:id", protect, updateHr);
+router.delete("/:id", protect, deleteHr);
+router.post("/verify-emails", protect, verifyEmails);
+router.get("/by-company", protect, getHrsByCompany);
 
 export default router;
