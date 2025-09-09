@@ -48,8 +48,8 @@ export const sendCampaign = async (req, res) => {
     await transporter.verify();
 
     const subjectTpl = handlebars.compile(campaign.template.subject);
-    // const bodyTpl = handlebars.compile(campaign.template.body);
-    const bodyTpl = handlebars.compile(`<pre>{{{body}}}</pre>`);
+    const bodyTpl = handlebars.compile(campaign.template.body);
+    // const bodyTpl = handlebars.compile(`<pre>{{{body}}}</pre>`);
 
     const sentResults = [];
 
@@ -75,7 +75,7 @@ export const sendCampaign = async (req, res) => {
         from: req.user.smtp.email,
         to: hr.email,
         subject: subjectTpl(data),
-        html: bodyTpl({ ...data, body: campaign.template.body }),
+        html: `<pre style="font-family: inherit;">${bodyTpl(data)}</pre>`,
       };
 
       try {

@@ -6,6 +6,14 @@ import axios from "axios";
 import { checkEmailVerificationLimit } from "../utils/rateLimit.js";
 import { Company } from "../models/company.js";
 
+function formatCompanyName(name) {
+  return name
+    .trim() // remove leading/trailing spaces
+    .replace(/\s+/g, " ") // replace multiple spaces with single space
+    .toLowerCase() // make all lowercase first
+    .replace(/\b\w/g, (char) => char.toUpperCase()); // capitalize every word
+}
+
 export const uploadHrBulk = async (req, res) => {
   try {
     const addedBy = req.user._id; // assuming user is authenticated
@@ -17,7 +25,12 @@ export const uploadHrBulk = async (req, res) => {
     const data = await parseExcelOrCsv(file.buffer, ext);
 
     // Filter out invalid rows
-    const rawData = data.filter((d) => d.email && d.name && d.company);
+    const rawData = data
+      .filter((d) => d.email && d.name && d.company)
+      .map((d) => ({
+        ...d,
+        company: formatCompanyName(d.company),
+      }));
 
     // Add companies if not present
     await Promise.all(
@@ -121,24 +134,27 @@ export const addHr = async (req, res) => {
         .json({ error: "Name, Email, and Company are required." });
     }
 
-    const exists = await Hr.findOne({ email });
+    const exists = await Hr.findOne({ email: email.toLowerCase() });
     if (exists) {
       return res
         .status(409)
         .json({ error: "HR with this email already exists" });
     }
 
+    // format company
+    const formattedCompany = formatCompanyName(company);
+
     // Add company if not present
     await Company.findOneAndUpdate(
-      { name: company },
-      { name: company },
+      { name: formattedCompany },
+      { name: formattedCompany },
       { upsert: true, new: true }
     );
 
     const hr = await Hr.create({
       name,
-      email,
-      company,
+      email: email.toLowerCase(),
+      company: formattedCompany,
       title,
       mobileNo,
       isGlobal,
@@ -168,8 +184,15 @@ export const updateHr = async (req, res) => {
       return res.status(403).json({ error: "Unauthorized to update this HR" });
     }
 
-    // If company is being updated, add it if not present
+    // normalize email if provided
+    if (req.body.email) {
+      req.body.email = req.body.email.toLowerCase();
+    }
+
+    // format company if provided
     if (req.body.company) {
+      req.body.company = formatCompanyName(req.body.company);
+
       await Company.findOneAndUpdate(
         { name: req.body.company },
         { name: req.body.company },
@@ -180,6 +203,7 @@ export const updateHr = async (req, res) => {
     const updatedHr = await Hr.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
     });
+
     res.status(200).json(updatedHr);
   } catch (err) {
     console.error("Update HR error:", err);
