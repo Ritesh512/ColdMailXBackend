@@ -8,6 +8,7 @@ import userRoutes from "./routes/userRoutes.js";
 import templateRoutes from "./routes/templateRoutes.js";
 import campaignRoutes from "./routes/campaignRoutes.js";
 import companyRoutes from "./routes/companyRoutes.js";
+import aitemplateRoutes from "./routes/aitemplateRoutes.js";
 import { connectToDB } from "./utils/db.js";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -29,6 +30,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/templates", templateRoutes);
 app.use("/api/campaigns", campaignRoutes);
 app.use("/api/hr", companyRoutes);
+app.use("/api/aitemplate", aitemplateRoutes);
 
 app.get(/.*/, (req, res) => {
   res.sendFile(path.resolve(__dirname, "dist", "index.html"));
