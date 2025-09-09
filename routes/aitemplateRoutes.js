@@ -1,8 +1,8 @@
-import { Router } from 'express';
-import { protect } from '../middlewares/authMiddleware.js';
-import { generateTemplate } from '../controllers/generateAITempController.js';
+import { Router } from "express";
+import { protect } from "../middlewares/authMiddleware.js";
+import { generateTemplate } from "../controllers/generateAITempController.js";
 
 const router = Router();
-router.post('/generate-template', generateTemplate);
+router.post("/generate-template", protect, generateTemplate);
 
 export default router;
