@@ -4,6 +4,7 @@ import { parseExcelOrCsv } from "../utils/parseFile.js";
 import fs from "fs";
 import axios from "axios";
 import { checkEmailVerificationLimit } from "../utils/rateLimit.js";
+import { User } from "../models/User.js";
 import { Company } from "../models/company.js";
 
 function formatCompanyName(name) {
@@ -33,21 +34,21 @@ export const uploadHrBulk = async (req, res) => {
       }));
 
     // Add companies if not present
-    await Promise.all(
-      rawData.map((hr) =>
-        Company.findOneAndUpdate(
-          { name: hr.company },
-          { name: hr.company },
-          { upsert: true, new: true }
-        )
-      )
-    );
+    // await Promise.all(
+    //   rawData.map((hr) =>
+    //     Company.findOneAndUpdate(
+    //       { name: hr.company },
+    //       { name: hr.company },
+    //       { upsert: true, new: true }
+    //     )
+    //   )
+    // );
 
     // Get emails from file
     const emails = rawData.map((hr) => hr.email.toLowerCase());
 
     // Find existing HRs by email
-    const existing = await Hr.find({ email: { $in: emails } }).select("email");
+    const existing = await Hr.find({ email: { $in: emails } , addedBy}).select("email");
     const existingEmails = new Set(
       existing.map((hr) => hr.email.toLowerCase())
     );
@@ -76,7 +77,6 @@ export const uploadHrBulk = async (req, res) => {
       );
     }
 
-    // fs.unlinkSync(file.path); // Clean up uploaded file
 
     res.status(200).json({
       message: "Bulk HR upload completed",
@@ -140,7 +140,7 @@ export const addHr = async (req, res) => {
         .json({ error: "Name, Email, and Company are required." });
     }
 
-    const exists = await Hr.findOne({ email: email.toLowerCase() });
+    const exists = await Hr.findOne({ email: email.toLowerCase(), addedBy: req.user._id });
     if (exists) {
       return res
         .status(409)
@@ -203,13 +203,14 @@ export const updateHr = async (req, res) => {
 
     // format company if provided
     if (req.body.company) {
-      req.body.company = formatCompanyName(req.body.company);
+      const formattedCompany = formatCompanyName(req.body.company);
+      req.body.company = formattedCompany;
 
-      await Company.findOneAndUpdate(
-        { name: req.body.company },
-        { name: req.body.company },
-        { upsert: true, new: true }
-      );
+      // await Company.findOneAndUpdate(
+      //   { name: req.body.company },
+      //   { name: req.body.company },
+      //   { upsert: true, new: true }
+      // );
 
       await User.findByIdAndUpdate(
         req.user._id,
@@ -311,13 +312,7 @@ export const getHrsByCompany = async (req, res) => {
         .json({ error: "Company name is required in query." });
     }
 
-    console.log("Fetching HRs for company:", company);
-    console.log("Request made by user ID:", req.user._id);
-
-    const hrs = await Hr.find({
-      company,
-      $or: [ { addedBy: req.user._id }],
-    }).select("name email _id isVerified isGlobal");
+    const hrs = await Hr.find({ company, addedBy: req.user._id }).select("name email _id isVerified isGlobal");
 
     res.status(200).json(hrs);
   } catch (err) {
