@@ -57,8 +57,8 @@ export const getDashboardStats = async (req, res) => {
     const smtpEmail = user.smtp?.email
       ? user.smtp.email
       : null;
-    const smtpPassword = user.smtp?.password
-      ? '****' + user.smtp.password.slice(-4)
+    const smtpPassword = user.smtp?.password?.content
+      ? '****' + user.smtp.password.content.slice(-4)
       : null;
 
     // 5. Top 5 companies with highest global HR count
