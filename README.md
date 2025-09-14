@@ -142,6 +142,8 @@ Email: Nodemailer
 AI: GROQ
 
 Hosting: Vercel
+
+Hunter: For Email Verification
 ```
 
 ## 🤝 Contributing
