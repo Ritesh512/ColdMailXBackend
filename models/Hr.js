@@ -4,7 +4,7 @@ import { type } from 'os';
 
 const hrSchema = new mongoose.Schema({
   name: String,
-  email: {type: String, unique: true, required: true},
+  email: {type: String, required: true},
   company: String,
   title: String,
   mobileNo: String,

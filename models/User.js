@@ -14,7 +14,8 @@ const userSchema = new mongoose.Schema({
     },
   },
   emailVerificationCount: { type: Number, default: 0 },
-  emailVerificationLastReset: { type: Date, default: new Date() }
+  emailVerificationLastReset: { type: Date, default: new Date() },
+  companyNames: [{ type: String, trim: true }]
 }, { timestamps: true });
 
 userSchema.pre('save', async function (next) {

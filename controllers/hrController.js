@@ -68,6 +68,12 @@ export const uploadHrBulk = async (req, res) => {
 
     if (newHrs.length > 0) {
       await Hr.insertMany(newHrs);
+      const uniqueCompanies = [...new Set(newHrs.map(hr => hr.company))];
+      await User.findByIdAndUpdate(
+        addedBy,
+        { $addToSet: { companyNames: { $each: uniqueCompanies } } }, // push multiple unique
+        { new: true }
+      );
     }
 
     // fs.unlinkSync(file.path); // Clean up uploaded file
@@ -145,10 +151,16 @@ export const addHr = async (req, res) => {
     const formattedCompany = formatCompanyName(company);
 
     // Add company if not present
-    await Company.findOneAndUpdate(
-      { name: formattedCompany },
-      { name: formattedCompany },
-      { upsert: true, new: true }
+    // await Company.findOneAndUpdate(
+    //   { name: formattedCompany },
+    //   { name: formattedCompany },
+    //   { upsert: true, new: true }
+    // );
+
+    await User.findByIdAndUpdate(
+      req.user._id,
+      { $addToSet: { companyNames: formattedCompany } }, // ensures uniqueness
+      { new: true }
     );
 
     const hr = await Hr.create({
@@ -197,6 +209,12 @@ export const updateHr = async (req, res) => {
         { name: req.body.company },
         { name: req.body.company },
         { upsert: true, new: true }
+      );
+
+      await User.findByIdAndUpdate(
+        req.user._id,
+        { $addToSet: { companyNames: formattedCompany } },
+        { new: true }
       );
     }
 
@@ -298,7 +316,7 @@ export const getHrsByCompany = async (req, res) => {
 
     const hrs = await Hr.find({
       company,
-      $or: [{ isGlobal: true }, { addedBy: req.user._id }],
+      $or: [ { addedBy: req.user._id }],
     }).select("name email _id isVerified isGlobal");
 
     res.status(200).json(hrs);
