@@ -42,19 +42,23 @@ A quick look at Coldmailx in action:
 <div align="center">  
   <table>  
     <tr>  
-      <td><img src="images/dashboard.png" width="250"/></td>  
-      <td><img src="images/hr-upload.png" width="250"/></td>  
-      <td><img src="images/template-creation.png" width="250"/></td>  
+      <td><img width="250"  alt="landing" src="https://github.com/user-attachments/assets/8b3f91ed-b511-4e38-b588-6e5ee727d11d" /></td>  
+      <td><img width="250"  alt="dashboard" src="https://github.com/user-attachments/assets/943a963d-ac5d-466f-95d6-ac9574517cce" /></td>  
+      <td><img width="250"  alt="campaign" src="https://github.com/user-attachments/assets/b97a7f17-233e-49ae-a0ed-da367e4edf07" /></td>  
     </tr>  
     <tr>  
-      <td><img src="images/campaign-preview.png" width="250"/></td>  
-      <td><img src="images/email-sent.png" width="250"/></td>  
-      <td><img src="images/mobile-view.png" width="250"/></td>  
+      <td><img width="250" alt="addHr" src="https://github.com/user-attachments/assets/388d86c5-958c-48d1-97f8-68cf820dfd4d" /></td>  
+      <td><img width="250"alt="Template" src="https://github.com/user-attachments/assets/6be5596a-b831-404e-b20a-bae24b8d6cbb" /></td>  
+      <td><img width="250" alt="campaign1" src="https://github.com/user-attachments/assets/c5a7c70b-ccfd-48b7-8d1b-6bef9d7186fd" /></td>  
     </tr>  
   </table>  
 </div>  
 
-*(Add your screenshots in the `/images` folder and update the paths above.)*  
+
+
+
+
+
 
 ---
 
