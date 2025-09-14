@@ -3,7 +3,7 @@ import xlsx from "xlsx";
 import csv from "csvtojson";
 
 export const parseExcelOrCsv = async (fileBuffer, ext) => {
-  if (ext === "csv") {
+  if (ext === " ") {
     // Buffer → string → parse
     return await csv().fromString(fileBuffer.toString());
   } else if (ext === "xlsx" || ext === "xls") {

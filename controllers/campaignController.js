@@ -4,6 +4,7 @@ import { Template } from "../models/Template.js";
 import nodemailer from "nodemailer";
 import handlebars from "handlebars";
 import { CampaignHistory } from "../models/CampaignHistory.js";
+import { decrypt } from "../utils/crypto.js";
 
 export const previewTemplate = async (req, res) => {
   try {
@@ -35,6 +36,11 @@ export const sendCampaign = async (req, res) => {
       return res.status(403).json({ error: "Unauthorized" });
     }
 
+    let smtpPassword = process.env.MAIL_PASSWORD;
+    if (req.user.smtp && req.user.smtp.password && req.user.smtp.password.content) {
+      smtpPassword = decrypt(req.user.smtp.password);
+    }
+
     // Configure nodemailer with user's SMTP credentials
     const transporter = nodemailer.createTransport({
       service: "gmail",
@@ -42,7 +48,7 @@ export const sendCampaign = async (req, res) => {
       secure: true,
       auth: {
         user: req.user.smtp.email || process.env.MAIL_USERNAME,
-        pass: req.user.smtp.password || process.env.MAIL_PASSWORD,
+        pass: smtpPassword, // Use the decrypted password
       },
     });
     await transporter.verify();

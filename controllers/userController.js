@@ -1,5 +1,7 @@
 import { User } from '../models/User.js';
 import { generateToken } from '../utils/generateToken.js';
+import { encrypt } from '../utils/crypto.js';
+
 
 export const registerUser = async (req, res) => {
   const { name, email, password } = req.body;
@@ -42,13 +44,17 @@ export const updateSmtp = async (req, res) => {
       return res.status(400).json({ error: 'SMTP email and password are required.' });
     }
 
+    // Encrypt the password before saving
+    const encryptedPassword = encrypt(password);
+
     const user = await User.findByIdAndUpdate(
       req.user._id,
-      { smtp: { email, password } },
+      { smtp: { email, password: encryptedPassword } },
       { new: true }
-    ).select('-password'); // Don't return password
+    ).select('-password'); // Don't return user's main password
 
-    res.status(200).json({ smtp: user.smtp });
+    // Respond without sending back the encrypted password details
+    res.status(200).json({ smtp: { email: user.smtp.email } });
   } catch (err) {
     console.error('Update SMTP error:', err);
     res.status(500).json({ error: 'Failed to update SMTP settings.' });

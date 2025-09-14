@@ -8,7 +8,10 @@ const userSchema = new mongoose.Schema({
   role: { type: String, enum: ['user', 'admin'], default: 'user' },
   smtp: {
     email: String,
-    password: String, // Consider encrypting this later
+    password: {
+      iv: String,
+      content: String,
+    },
   },
   emailVerificationCount: { type: Number, default: 0 },
   emailVerificationLastReset: { type: Date, default: new Date() }
