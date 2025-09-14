@@ -63,7 +63,7 @@ export const getDashboardStats = async (req, res) => {
 
     // 5. Top 5 companies with highest global HR count
     const topCompaniesAgg = await Hr.aggregate([
-      { $match: { isGlobal: true } },
+      { $match: { addedBy: userId } },
       { $group: { _id: '$company', hrCount: { $sum: 1 } } },
       { $sort: { hrCount: -1 } },
       { $limit: 5 }
