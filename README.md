@@ -97,8 +97,8 @@ Use that app password in the .env file instead of your real password.
 
 ```
 
-🤖 AI Integration
-
+## 🤖 AI Integration
+```bash
 Coldmailx leverages GROQ-powered LLMs to generate professional cold emails.
 Simply provide:
 
@@ -107,23 +107,26 @@ Your resume
 The job description
 
 The system will suggest tailored email templates ready for use in campaigns.
+```
 
-📱 Responsiveness
-
+## 📱 Responsiveness
+```bash
 Fully responsive UI using Tailwind CSS.
 
 Optimized for desktop, tablet, and mobile screens.
+```
 
-📌 Roadmap
-
+## 📌 Roadmap
+```bash
  Analytics for campaigns (open rate, reply tracking).
 
  Scheduling campaigns.
 
  Advanced AI suggestions for personalization.
+```
 
-🛠️ Tech Stack
-
+## 🛠️ Tech Stack
+```bash
 Frontend: React, Tailwind CSS
 
 Backend: Node.js, Express.js
@@ -135,8 +138,9 @@ Email: Nodemailer
 AI: GROQ
 
 Hosting: Vercel
+```
 
-🤝 Contributing
-
+## 🤝 Contributing
+```bash
 Pull requests are welcome. For major changes, please open an issue first to discuss what you’d like to change.
-
+```
